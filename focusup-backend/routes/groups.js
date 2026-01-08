@@ -7,6 +7,8 @@ import {
   removeMember,
   updateGroup,
   deleteGroup,
+  joinGroupByCode,
+  leaveGroup,
 } from '../controllers/groupController.js'
 import { protect } from '../middleware/auth.js'
 
@@ -15,7 +17,9 @@ const router = express.Router()
 router.use(protect)
 
 router.route('/').post(createGroup).get(getGroups)
+router.post('/join/code', joinGroupByCode)
 router.route('/:id').get(getGroup).put(updateGroup).delete(deleteGroup)
+router.post('/:id/leave', leaveGroup)
 router.post('/:id/add-member', addMember)
 router.post('/:id/remove-member', removeMember)
 

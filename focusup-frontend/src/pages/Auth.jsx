@@ -7,7 +7,7 @@ import { authAPI } from '../services/api'
 
 export const Auth = () => {
   const [mode, setMode] = useState('login')
-  const [form, setForm] = useState({ name: '', email: '', password: '', studentId: '', college: '', department: '', role: 'student' })
+  const [form, setForm] = useState({ name: '', username: '', email: '', password: '', studentId: '', college: '', department: '', role: 'student' })
   const [loading, setLoading] = useState(false)
   const setUser = useFocusStore((s) => s.setUser)
   const setAuthenticated = useFocusStore((s) => s.setAuthenticated)
@@ -23,6 +23,11 @@ export const Auth = () => {
     
     if (mode === 'register' && !form.name.trim()) {
       toast.error('Please add your name to register.')
+      return
+    }
+
+    if (mode === 'register' && !form.username.trim()) {
+      toast.error('Username is required.')
       return
     }
 
@@ -42,6 +47,7 @@ export const Auth = () => {
         // Register mode
         const userData = {
           name: form.name,
+          username: form.username,
           email: form.email,
           password: form.password,
           studentId: form.studentId || undefined,
@@ -100,6 +106,20 @@ export const Auth = () => {
                   value={form.name}
                   onChange={(e) => setForm({ ...form, name: e.target.value })}
                   className="mt-2 w-full rounded-2xl border border-ink/10 px-3 py-2"
+                  required
+                />
+              </div>
+              <div>
+                <label className="text-sm text-ink/70">Username * (3-20 characters)</label>
+                <input
+                  value={form.username}
+                  onChange={(e) => setForm({ ...form, username: e.target.value.toLowerCase() })}
+                  className="mt-2 w-full rounded-2xl border border-ink/10 px-3 py-2"
+                  placeholder="e.g., john_doe or johndoe23"
+                  minLength={3}
+                  maxLength={20}
+                  pattern="[a-z0-9_-]+"
+                  title="Only lowercase letters, numbers, underscores, and hyphens allowed"
                   required
                 />
               </div>

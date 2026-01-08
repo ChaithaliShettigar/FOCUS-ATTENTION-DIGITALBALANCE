@@ -186,6 +186,77 @@ export const profileAPI = {
     
     return data
   },
+
+  searchPublicProfiles: async (query) => {
+    return await apiRequest(`/profile/search?query=${encodeURIComponent(query)}`, { method: 'GET' })
+  },
+
+  searchUsersByUsername: async (query) => {
+    return await apiRequest(`/profile/search-users?query=${encodeURIComponent(query)}`, { method: 'GET' })
+  },
+
+  getPublicProfile: async (userId) => {
+    return await apiRequest(`/profile/public/${userId}`, { method: 'GET' })
+  },
+}
+
+// ============ GROUP API ============
+
+export const groupAPI = {
+  createGroup: async (groupData) => {
+    return await apiRequest('/groups', {
+      method: 'POST',
+      body: JSON.stringify(groupData),
+    })
+  },
+
+  getUserGroups: async () => {
+    return await apiRequest('/groups', { method: 'GET' })
+  },
+
+  getGroup: async (groupId) => {
+    return await apiRequest(`/groups/${groupId}`, { method: 'GET' })
+  },
+
+  joinGroup: async (groupData) => {
+    return await apiRequest('/groups/join/code', {
+      method: 'POST',
+      body: JSON.stringify(groupData),
+    })
+  },
+
+  leaveGroup: async (groupId) => {
+    return await apiRequest(`/groups/${groupId}/leave`, {
+      method: 'POST',
+    })
+  },
+
+  updateGroup: async (groupId, updates) => {
+    return await apiRequest(`/groups/${groupId}`, {
+      method: 'PUT',
+      body: JSON.stringify(updates),
+    })
+  },
+
+  deleteGroup: async (groupId) => {
+    return await apiRequest(`/groups/${groupId}`, {
+      method: 'DELETE',
+    })
+  },
+
+  addMember: async (groupId, userId) => {
+    return await apiRequest(`/groups/${groupId}/add-member`, {
+      method: 'POST',
+      body: JSON.stringify({ userId }),
+    })
+  },
+
+  removeMember: async (groupId, userId) => {
+    return await apiRequest(`/groups/${groupId}/remove-member`, {
+      method: 'POST',
+      body: JSON.stringify({ userId }),
+    })
+  },
 }
 
 // ============ HELPER FUNCTIONS ============
@@ -200,3 +271,4 @@ export const getUserFromStorage = () => {
 }
 
 export { clearTokens, setTokens, getToken }
+

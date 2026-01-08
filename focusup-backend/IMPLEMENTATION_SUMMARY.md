@@ -294,10 +294,10 @@ Invalid: Pass1@ (too short)
 
 The `.env` file contains:
 ```
-MONGODB_URI=mongodb+srv://chaithalishettigar_db_user:qisdjM9sTvWFa21o@cluster0.l6xkolb.mongodb.net/focusup
-JWT_SECRET=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+MONGODB_URI=your_mongodb_atlas_connection_string_here
+JWT_SECRET=your_strong_jwt_secret_here
 JWT_EXPIRE=7d
-JWT_REFRESH_SECRET=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+JWT_REFRESH_SECRET=your_strong_jwt_refresh_secret_here
 JWT_REFRESH_EXPIRE=30d
 PORT=5000
 NODE_ENV=development

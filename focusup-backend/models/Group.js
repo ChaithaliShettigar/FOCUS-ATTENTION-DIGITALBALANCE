@@ -1,11 +1,27 @@
 import mongoose from 'mongoose'
 
+// Helper function to generate unique 8-character code
+function generateGroupCode() {
+  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789'
+  let code = ''
+  for (let i = 0; i < 8; i++) {
+    code += chars.charAt(Math.floor(Math.random() * chars.length))
+  }
+  return code
+}
+
 const groupSchema = new mongoose.Schema(
   {
     name: {
       type: String,
       required: [true, 'Please provide a group name'],
       trim: true,
+    },
+    code: {
+      type: String,
+      unique: true,
+      default: generateGroupCode,
+      uppercase: true,
     },
     description: {
       type: String,

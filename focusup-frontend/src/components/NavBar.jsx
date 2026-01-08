@@ -10,6 +10,7 @@ const links = [
   { to: '/dashboard', labelKey: 'dashboard' },
   { to: '/learn', labelKey: 'learn' },
   { to: '/groups', labelKey: 'groups' },
+  { to: '/search', labelKey: 'search', label: '🔍 Search' },
   { to: '/analytics', labelKey: 'analytics' },
   { to: '/profile', labelKey: 'profile' },
   { to: '/settings', labelKey: 'settings' },

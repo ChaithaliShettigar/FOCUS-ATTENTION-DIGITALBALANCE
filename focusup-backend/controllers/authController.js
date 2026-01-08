@@ -5,13 +5,35 @@ import { validateEmail, validatePassword, validateName } from '../utils/validato
 // ============ REGISTER ============
 export const register = async (req, res, next) => {
   try {
-    const { name, email, password, college, department, role, studentId } = req.body
+    const { name, username, email, password, college, department, role, studentId } = req.body
 
     // Validation
     if (!name || !name.trim()) {
       return res.status(400).json({ 
         success: false,
         message: 'Name is required' 
+      })
+    }
+
+    if (!username || !username.trim()) {
+      return res.status(400).json({ 
+        success: false,
+        message: 'Username is required' 
+      })
+    }
+
+    const trimmedUsername = username.trim().toLowerCase()
+    if (trimmedUsername.length < 3 || trimmedUsername.length > 20) {
+      return res.status(400).json({ 
+        success: false,
+        message: 'Username must be between 3 and 20 characters' 
+      })
+    }
+
+    if (!/^[a-zA-Z0-9_-]+$/.test(trimmedUsername)) {
+      return res.status(400).json({ 
+        success: false,
+        message: 'Username can only contain letters, numbers, hyphens and underscores' 
       })
     }
 
@@ -52,6 +74,15 @@ export const register = async (req, res, next) => {
       })
     }
 
+    // Check if username already exists
+    const existingUsername = await User.findOne({ username: trimmedUsername })
+    if (existingUsername) {
+      return res.status(400).json({ 
+        success: false,
+        message: 'Username already exists. Please use a different username.' 
+      })
+    }
+
     // Check if studentId already exists (if provided)
     if (studentId && studentId.trim()) {
       const existingStudentId = await User.findOne({ studentId: studentId.trim() })
@@ -66,6 +97,7 @@ export const register = async (req, res, next) => {
     // Create user
     const newUser = await User.create({
       name: name.trim(),
+      username: trimmedUsername,
       email: email.toLowerCase(),
       password,
       college: college || '',
@@ -86,6 +118,7 @@ export const register = async (req, res, next) => {
       user: {
         id: newUser._id,
         name: newUser.name,
+        username: newUser.username,
         email: newUser.email,
         college: newUser.college,
         department: newUser.department,
@@ -153,6 +186,7 @@ export const login = async (req, res, next) => {
       user: {
         id: user._id,
         name: user.name,
+        username: user.username,
         email: user.email,
         college: user.college,
         department: user.department,

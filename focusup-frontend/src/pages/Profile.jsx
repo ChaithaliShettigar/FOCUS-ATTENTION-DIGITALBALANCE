@@ -5,6 +5,7 @@ import { useFocusStore } from '../store/useFocusStore'
 import { toast } from 'react-hot-toast'
 import { Eye, EyeOff } from 'lucide-react'
 import { profileAPI, authAPI } from '../services/api'
+import { FocusScoreBadge } from '../components/FocusScoreBadge'
 
 export const Profile = () => {
   const user = useFocusStore((s) => s.user)
@@ -147,6 +148,25 @@ export const Profile = () => {
           <h2 className="text-4xl font-bold text-ink">Profile Settings</h2>
           <p className="mt-2 text-ink/70">Manage your personal information, security, and preferences.</p>
         </div>
+
+        {/* Focus Score Badge */}
+        <Section title="Your Focus Score" icon="🎯">
+          <div className="flex flex-col items-center justify-center py-8">
+            <FocusScoreBadge 
+              score={user?.focusScore || 0} 
+              size="large" 
+              showLabel={true}
+              showScore={true}
+            />
+            <p className="mt-6 text-center text-ink/70 text-sm max-w-md">
+              {user?.focusScore >= 80 && "🚀 Outstanding! You're a focus master! Keep pushing your boundaries!"}
+              {user?.focusScore >= 60 && user?.focusScore < 80 && "⭐ Great work! Your focus is impressive. Aim for the next level!"}
+              {user?.focusScore >= 40 && user?.focusScore < 60 && "✨ Good progress! Keep building your focus habits for better results."}
+              {user?.focusScore >= 20 && user?.focusScore < 40 && "🌙 You're on your way! Continue practicing to improve your focus."}
+              {user?.focusScore < 20 && "🌱 Every journey starts somewhere! Begin your focus transformation today."}
+            </p>
+          </div>
+        </Section>
 
         {/* Personal Information */}
         <Section title="Personal Information" icon="👤">

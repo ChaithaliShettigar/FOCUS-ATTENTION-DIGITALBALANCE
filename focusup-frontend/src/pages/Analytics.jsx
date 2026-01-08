@@ -1,9 +1,11 @@
 import { DoodleBackground } from '../components/DoodleBackground'
 import { useFocusStore } from '../store/useFocusStore'
 import { Bar, BarChart, CartesianGrid, Legend, ResponsiveContainer, Tooltip, XAxis, YAxis, LineChart, Line, PieChart, Pie, Cell } from 'recharts'
+import { FocusScoreBadge } from '../components/FocusScoreBadge'
 
 export const Analytics = () => {
   const sessions = useFocusStore((s) => s.sessions)
+  const user = useFocusStore((s) => s.user)
 
   const chartData = sessions.map((s, idx) => ({
     name: `S${idx + 1}`,
@@ -32,9 +34,19 @@ export const Analytics = () => {
   return (
     <DoodleBackground>
       <div className="flex flex-col gap-8">
-        <div>
-          <h2 className="text-3xl font-bold text-ink">Your Analytics Dashboard</h2>
-          <p className="text-ink/70">Visual insights into your focus patterns, activity, and study consistency.</p>
+        <div className="flex items-start justify-between">
+          <div>
+            <h2 className="text-3xl font-bold text-ink">Your Analytics Dashboard</h2>
+            <p className="text-ink/70">Visual insights into your focus patterns, activity, and study consistency.</p>
+          </div>
+          <div className="hidden lg:block">
+            <FocusScoreBadge 
+              score={user?.focusScore || 0} 
+              size="small" 
+              showLabel={false}
+              showScore={true}
+            />
+          </div>
         </div>
 
         <div className="grid gap-4 md:grid-cols-3">

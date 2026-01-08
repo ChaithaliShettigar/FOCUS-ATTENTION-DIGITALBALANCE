@@ -14,6 +14,7 @@ import { Groups } from './pages/Groups'
 import { Analytics } from './pages/Analytics'
 import { Profile } from './pages/Profile'
 import { Settings } from './pages/Settings'
+import { Search } from './pages/Search'
 import { Auth } from './pages/Auth'
 
 const PageWrapper = ({ children }) => <div className="app-shell min-h-screen">{children}</div>
@@ -49,6 +50,7 @@ function App() {
         <Route path="/dashboard" element={<Dashboard />} />
         <Route path="/learn" element={<Learn />} />
         <Route path="/groups" element={<Groups />} />
+        <Route path="/search" element={<Search />} />
         <Route path="/analytics" element={<Analytics />} />
         <Route path="/profile" element={<Profile />} />
         <Route path="/settings" element={<Settings />} />

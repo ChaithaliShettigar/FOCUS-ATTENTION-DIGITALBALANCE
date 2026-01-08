@@ -77,3 +77,40 @@ temp/
 # Local development
 .pnp
 .pnp.js
+
+# ===== ADDITIONAL SECURITY PATTERNS =====
+# API Configuration files (CRITICAL!)
+config/api-keys.*
+config/firebase-config.*
+config/google-config.*
+config/stripe-config.*
+config/auth0-config.*
+config/oauth-config.*
+api-config.*
+
+# Third-party service keys
+firebase-config.js
+google-services.json
+GoogleService-Info.plist
+aws-exports.js
+
+# Build-time secrets
+.env.production.local
+.env.development.local
+build-secrets.*
+deploy-config.*
+
+# Deployment and CI/CD
+.vercel/
+.netlify/
+.firebase/
+.surge/
+deploy-config.*
+ci-config.*
+
+# Security scans
+security-scan-results.*
+vulnerability-report.*
+.snyk
+
+# ⚠️  NEVER commit files with real API keys or secrets!

@@ -220,3 +220,101 @@ export const deleteProfile = async (req, res, next) => {
     next(error)
   }
 }
+
+// ============ SEARCH PUBLIC PROFILES ============
+export const searchPublicProfiles = async (req, res, next) => {
+  try {
+    const { query } = req.query
+
+    if (!query || query.trim().length === 0) {
+      return res.status(400).json({
+        success: false,
+        message: 'Please provide a search query'
+      })
+    }
+
+    const searchTerm = query.trim()
+
+    // Search for users with public focus or public profiles
+    const users = await User.find({
+      $or: [
+        { name: { $regex: searchTerm, $options: 'i' } },
+        { email: { $regex: searchTerm, $options: 'i' } },
+        { username: { $regex: searchTerm, $options: 'i' } },
+      ],
+      publicFocus: true,
+    }).select('name email username college department role focusScore streak avatar')
+      .limit(50)
+
+    res.status(200).json({
+      success: true,
+      count: users.length,
+      users,
+    })
+  } catch (error) {
+    next(error)
+  }
+}
+
+// ============ SEARCH USERS BY USERNAME ============
+export const searchUsersByUsername = async (req, res, next) => {
+  try {
+    const { query } = req.query
+
+    if (!query || query.trim().length === 0) {
+      return res.status(400).json({
+        success: false,
+        message: 'Please provide a search query'
+      })
+    }
+
+    const searchTerm = query.trim()
+
+    // Search for users by username with case-insensitive partial match
+    const users = await User.find({
+      username: { $regex: `^${searchTerm}`, $options: 'i' }
+    }).select('name email username college department role focusScore avatar')
+      .limit(20)
+
+    res.status(200).json({
+      success: true,
+      count: users.length,
+      users,
+    })
+  } catch (error) {
+    next(error)
+  }
+}
+
+// ============ GET PUBLIC PROFILE ============
+export const getPublicProfile = async (req, res, next) => {
+  try {
+    const { userId } = req.params
+
+    const user = await User.findById(userId)
+      .select('name email username college department role focusScore streak totalFocusMinutes avatar publicFocus')
+
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: 'User not found'
+      })
+    }
+
+    // Check if user has public focus enabled
+    if (!user.publicFocus) {
+      return res.status(403).json({
+        success: false,
+        message: 'This user has not made their focus score public'
+      })
+    }
+
+    res.status(200).json({
+      success: true,
+      user,
+    })
+  } catch (error) {
+    next(error)
+  }
+}
+

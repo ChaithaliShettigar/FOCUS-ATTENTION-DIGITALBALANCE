@@ -1,9 +1,11 @@
 import { Link } from 'react-router-dom'
 import { DoodleBackground } from '../components/DoodleBackground'
 import { useFocusStore } from '../store/useFocusStore'
+import { FocusScoreBadgeCompact } from '../components/FocusScoreBadge'
 
 export const Dashboard = () => {
   const focusScore = useFocusStore((s) => s.focusScore)
+  const user = useFocusStore((s) => s.user)
   const streak = useFocusStore((s) => s.streak)
   const sessions = useFocusStore((s) => s.sessions)
   const currentSessionId = useFocusStore((s) => s.currentSessionId)
@@ -26,7 +28,11 @@ export const Dashboard = () => {
         </div>
 
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          <StatCard title="Focus score" value={focusScore} hint="Grows as you finish planned sessions" />
+          <div className="sm:col-span-2 lg:col-span-1">
+            <div className="rounded-3xl bg-white/80 p-5 shadow-soft h-full flex items-center justify-center">
+              <FocusScoreBadgeCompact score={user?.focusScore || focusScore} />
+            </div>
+          </div>
           <StatCard title="Study streak" value={`${streak} days`} hint="Complete a session to extend" />
           <StatCard title="Sessions" value={sessions.length} hint="All-time sessions you logged" />
           <StatCard title="Tab switches" value={useFocusStore((s) => s.tabSwitches)} hint="Stay inside FocusUp for fewer switches" />
