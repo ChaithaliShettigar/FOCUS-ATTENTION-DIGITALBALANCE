@@ -94,9 +94,11 @@ export const Profile = () => {
       const response = await profileAPI.togglePublicFocus()
       
       if (response.success) {
-        setUser({ ...user, publicFocus: !user.publicFocus })
+        // Update local state with the new publicFocus value from response
+        const newPublicFocus = response.publicFocus
+        setUser({ ...user, publicFocus: newPublicFocus })
         toast.success(
-          response.user.publicFocus 
+          newPublicFocus 
             ? 'Focus stats are now public' 
             : 'Focus stats are now private'
         )

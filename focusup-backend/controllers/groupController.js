@@ -21,6 +21,14 @@ export const createGroup = async (req, res) => {
     await group.populate('createdBy', 'name email username')
     await group.populate('members.userId', 'name email username focusScore')
 
+    // Emit real-time event for group creation
+    if (req.io) {
+      req.io.emit('groupCreated', {
+        group,
+        createdBy: req.user.username
+      })
+    }
+
     res.status(201).json({
       success: true,
       group,
@@ -101,6 +109,19 @@ export const joinGroupByCode = async (req, res) => {
     await group.populate('createdBy', 'name email username')
     await group.populate('members.userId', 'name email username focusScore')
 
+    // Emit real-time event for group join
+    if (req.io) {
+      req.io.to(`group_${group._id}`).emit('memberJoinedGroup', {
+        group,
+        newMember: {
+          userId: req.user.id,
+          username: req.user.username,
+          name: req.user.name,
+          focusScore: req.user.focusScore
+        }
+      })
+    }
+
     res.status(200).json({
       success: true,
       message: 'Successfully joined the group',
@@ -141,6 +162,17 @@ export const leaveGroup = async (req, res) => {
 
     await group.populate('createdBy', 'name email username')
     await group.populate('members.userId', 'name email username focusScore')
+
+    // Emit real-time event for group leave
+    if (req.io) {
+      req.io.to(`group_${groupId}`).emit('memberLeftGroup', {
+        group,
+        leftMember: {
+          userId: userId,
+          username: req.user.username
+        }
+      })
+    }
 
     res.status(200).json({
       success: true,
@@ -252,6 +284,146 @@ export const updateGroup = async (req, res) => {
     res.status(200).json({
       success: true,
       group,
+    })
+  } catch (error) {
+    res.status(500).json({ message: error.message })
+  }
+}
+
+// Add resource to group
+export const addResource = async (req, res) => {
+  try {
+    const { title, link, type, content } = req.body
+    const groupId = req.params.id
+
+    const group = await Group.findById(groupId)
+
+    if (!group) {
+      return res.status(404).json({ message: 'Group not found' })
+    }
+
+    // Check if user is a member
+    const isMember = group.members.some((m) => m.userId.toString() === req.user.id)
+    if (!isMember) {
+      return res.status(403).json({ message: 'You are not a member of this group' })
+    }
+
+    const resource = {
+      id: Date.now().toString(),
+      title,
+      link,
+      type,
+      content,
+      addedBy: req.user.id,
+      addedAt: new Date()
+    }
+
+    group.resources.push(resource)
+    await group.save()
+
+    await group.populate('createdBy', 'name email username')
+    await group.populate('members.userId', 'name email username focusScore')
+
+    // Emit real-time event for new resource
+    if (req.io) {
+      req.io.to(`group_${groupId}`).emit('resourceAdded', {
+        group,
+        resource,
+        addedBy: req.user.username
+      })
+    }
+
+    res.status(201).json({
+      success: true,
+      group,
+      resource
+    })
+  } catch (error) {
+    res.status(500).json({ message: error.message })
+  }
+}
+
+// Get group resources
+export const getGroupResources = async (req, res) => {
+  try {
+    const groupId = req.params.id
+
+    const group = await Group.findById(groupId)
+      .populate('createdBy', 'name email username')
+      .populate('members.userId', 'name email username focusScore')
+
+    if (!group) {
+      return res.status(404).json({ message: 'Group not found' })
+    }
+
+    // Check if user is a member
+    const isMember = group.members.some((m) => m.userId.toString() === req.user.id)
+    if (!isMember) {
+      return res.status(403).json({ message: 'You are not a member of this group' })
+    }
+
+    res.status(200).json({
+      success: true,
+      resources: group.resources
+    })
+  } catch (error) {
+    res.status(500).json({ message: error.message })
+  }
+}
+
+// Delete resource from group
+export const deleteResource = async (req, res) => {
+  try {
+    const { resourceId } = req.params
+    const groupId = req.params.id
+
+    const group = await Group.findById(groupId)
+
+    if (!group) {
+      return res.status(404).json({ message: 'Group not found' })
+    }
+
+    // Check if user is a member
+    const isMember = group.members.some((m) => m.userId.toString() === req.user.id)
+    if (!isMember) {
+      return res.status(403).json({ message: 'You are not a member of this group' })
+    }
+
+    const resourceIndex = group.resources.findIndex((r) => r.id === resourceId)
+    if (resourceIndex === -1) {
+      return res.status(404).json({ message: 'Resource not found' })
+    }
+
+    const resource = group.resources[resourceIndex]
+
+    // Check if user is the one who added the resource or is admin
+    const userMember = group.members.find((m) => m.userId.toString() === req.user.id)
+    const isResourceOwner = resource.addedBy.toString() === req.user.id
+    const isAdmin = userMember && userMember.role === 'admin'
+
+    if (!isResourceOwner && !isAdmin) {
+      return res.status(403).json({ message: 'You can only delete resources you added or be an admin' })
+    }
+
+    group.resources.splice(resourceIndex, 1)
+    await group.save()
+
+    await group.populate('createdBy', 'name email username')
+    await group.populate('members.userId', 'name email username focusScore')
+
+    // Emit real-time event for resource deletion
+    if (req.io) {
+      req.io.to(`group_${groupId}`).emit('resourceDeleted', {
+        group,
+        resourceId,
+        deletedBy: req.user.username
+      })
+    }
+
+    res.status(200).json({
+      success: true,
+      group,
+      message: 'Resource deleted successfully'
     })
   } catch (error) {
     res.status(500).json({ message: error.message })

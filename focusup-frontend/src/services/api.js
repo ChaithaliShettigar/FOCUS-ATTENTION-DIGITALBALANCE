@@ -1,5 +1,5 @@
 // API configuration and service
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api'
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5001/api'
 
 // Helper to get auth token from localStorage
 const getToken = () => localStorage.getItem('accessToken')
@@ -225,6 +225,13 @@ export const groupAPI = {
     })
   },
 
+  joinGroupByCode: async (groupData) => {
+    return await apiRequest('/groups/join/code', {
+      method: 'POST',
+      body: JSON.stringify(groupData),
+    })
+  },
+
   leaveGroup: async (groupId) => {
     return await apiRequest(`/groups/${groupId}/leave`, {
       method: 'POST',
@@ -248,6 +255,25 @@ export const groupAPI = {
     return await apiRequest(`/groups/${groupId}/add-member`, {
       method: 'POST',
       body: JSON.stringify({ userId }),
+    })
+  },
+
+  addResource: async (groupId, resourceData) => {
+    return await apiRequest(`/groups/${groupId}/resources`, {
+      method: 'POST',
+      body: JSON.stringify(resourceData),
+    })
+  },
+
+  getGroupResources: async (groupId) => {
+    return await apiRequest(`/groups/${groupId}/resources`, {
+      method: 'GET',
+    })
+  },
+
+  deleteResource: async (groupId, resourceId) => {
+    return await apiRequest(`/groups/${groupId}/resources/${resourceId}`, {
+      method: 'DELETE',
     })
   },
 

@@ -165,6 +165,14 @@ export const togglePublicFocus = async (req, res, next) => {
       success: true,
       message: `Public focus ${user.publicFocus ? 'enabled' : 'disabled'}`,
       publicFocus: user.publicFocus,
+      user: {
+        id: user._id,
+        name: user.name,
+        email: user.email,
+        username: user.username,
+        publicFocus: user.publicFocus,
+        focusScore: user.focusScore
+      }
     })
   } catch (error) {
     next(error)

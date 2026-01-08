@@ -1,12 +1,15 @@
-import { useMemo, useState } from 'react'
+import { useMemo, useState, useEffect } from 'react'
 import { Route, Routes, useLocation } from 'react-router-dom'
 import { toast } from 'react-hot-toast'
 import { NavBar } from './components/NavBar'
 import { HelpBot } from './components/HelpBot'
 import { MiniBreak } from './components/MiniBreak'
+import { OnlineUsersIndicator } from './components/OnlineUsersIndicator'
 import { useFocusStore } from './store/useFocusStore'
 import { useFocusTracking } from './hooks/useFocusTracking'
 import { useSessionTimer } from './hooks/useSessionTimer'
+import { useRealtimeNotifications } from './hooks/useRealtimeNotifications'
+import { getUserFromStorage } from './services/api'
 import { Landing } from './pages/Landing'
 import { Dashboard } from './pages/Dashboard'
 import { Learn } from './pages/Learn'
@@ -16,6 +19,7 @@ import { Profile } from './pages/Profile'
 import { Settings } from './pages/Settings'
 import { Search } from './pages/Search'
 import { Auth } from './pages/Auth'
+import { DebugAuth } from './components/DebugAuth'
 
 const PageWrapper = ({ children }) => <div className="app-shell min-h-screen">{children}</div>
 
@@ -27,12 +31,31 @@ function useActiveSession() {
 
 function App() {
   const location = useLocation()
-  const endSession = useFocusStore((s) => s.endSession)
-  const currentSessionId = useFocusStore((s) => s.currentSessionId)
+  const { 
+    endSession, 
+    currentSessionId, 
+    isAuthenticated, 
+    user, 
+    focusScore, 
+    setAuthenticated 
+  } = useFocusStore()
   const [showBreak, setShowBreak] = useState(false)
   const activeSession = useActiveSession()
 
+  // Initialize socket connection if user is authenticated
+  useEffect(() => {
+    if (isAuthenticated) {
+      const userData = getUserFromStorage()
+      if (userData) {
+        // Initialize socket connection with user data
+        setAuthenticated(true)
+      }
+    }
+  }, [isAuthenticated, setAuthenticated])
+
   useFocusTracking(currentSessionId, { onThirdTabSwitch: () => setShowBreak(true) })
+
+  useRealtimeNotifications()
 
   useSessionTimer(currentSessionId, activeSession?.targetMinutes, () => {
     if (!currentSessionId) return
@@ -58,6 +81,8 @@ function App() {
         <Route path="*" element={<Landing />} />
       </Routes>
       <HelpBot />
+      <OnlineUsersIndicator />
+      <DebugAuth />
       <MiniBreak open={showBreak} onClose={() => setShowBreak(false)} />
       {hideNav ? null : (
         <footer className="mt-10 bg-transparent pb-10 text-center text-xs text-ink/60">

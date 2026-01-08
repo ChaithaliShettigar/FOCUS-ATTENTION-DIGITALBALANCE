@@ -1,5 +1,6 @@
 import { create } from 'zustand'
 import { getUserFromStorage, isAuthenticated as checkAuth } from '../services/api'
+import { socketService } from '../services/socket'
 
 // Lightweight id helper
 const makeId = () => crypto.randomUUID ? crypto.randomUUID() : Math.random().toString(36).slice(2, 9)
@@ -32,6 +33,8 @@ export const useFocusStore = create((set, get) => ({
   notifications: [],
   tabSwitches: 0,
   currentSessionId: null,
+  onlineUsers: [], // Track online users across tabs/browsers
+  realtimeGroups: [], // Track real-time group updates
 
   setLanguage: (lng) => set({ language: lng }),
   setUser: (payload) => {
@@ -42,7 +45,26 @@ export const useFocusStore = create((set, get) => ({
     }
     set({ user: updatedUser })
   },
-  setAuthenticated: (flag) => set({ isAuthenticated: !!flag }),
+  setAuthenticated: (flag) => {
+    set({ isAuthenticated: !!flag })
+    
+    if (flag) {
+      // Connect to socket when authenticated
+      const user = get().user
+      socketService.connect({
+        userId: user._id,
+        username: user.username,
+        focusScore: get().focusScore
+      })
+      
+      // Set up real-time event listeners
+      get().setupRealtimeListeners()
+    } else {
+      // Disconnect socket when logged out
+      socketService.disconnect()
+      set({ onlineUsers: [], realtimeGroups: [] })
+    }
+  },
   togglePublicFocus: () => set({ user: { ...get().user, publicFocus: !get().user.publicFocus } }),
 
   setCurrentSession: (sessionId) => set({ currentSessionId: sessionId }),
@@ -147,4 +169,100 @@ export const useFocusStore = create((set, get) => ({
 
   pushNotification: (message) =>
     set({ notifications: [...get().notifications.slice(-3), { id: makeId(), message }] }),
+
+  // Real-time functionality
+  setupRealtimeListeners: () => {
+    // Listen for online users
+    socketService.onUserOnline((userData) => {
+      const currentUsers = get().onlineUsers
+      if (!currentUsers.find(u => u.userId === userData.userId)) {
+        set({ onlineUsers: [...currentUsers, userData] })
+      }
+    })
+
+    // Listen for offline users
+    socketService.onUserOffline((userData) => {
+      set({ 
+        onlineUsers: get().onlineUsers.filter(u => u.userId !== userData.userId)
+      })
+    })
+
+    // Listen for focus score updates
+    socketService.onUserFocusScoreUpdated((data) => {
+      set({
+        onlineUsers: get().onlineUsers.map(u => 
+          u.userId === data.userId 
+            ? { ...u, focusScore: data.focusScore }
+            : u
+        )
+      })
+      
+      // Show notification for focus score updates
+      get().pushNotification(`${data.username} updated their focus score to ${data.focusScore}!`)
+    })
+
+    // Listen for group creation
+    socketService.onGroupCreated((data) => {
+      get().pushNotification(`${data.createdBy} created a new group: ${data.group.name}`)
+    })
+
+    // Listen for group members joining
+    socketService.onMemberJoinedGroup((data) => {
+      get().pushNotification(`${data.newMember.username} joined ${data.group.name}`)
+      
+      // Update groups if we're in this group
+      set({
+        groups: get().groups.map(g => 
+          g._id === data.group._id ? data.group : g
+        )
+      })
+    })
+
+    // Listen for group members leaving
+    socketService.onMemberLeftGroup((data) => {
+      get().pushNotification(`${data.leftMember.username} left ${data.group.name}`)
+      
+      // Update groups if we're in this group
+      set({
+        groups: get().groups.map(g => 
+          g._id === data.group._id ? data.group : g
+        )
+      })
+    })
+
+    // Listen for general group updates
+    socketService.onGroupUpdated((data) => {
+      set({
+        groups: get().groups.map(g => 
+          g._id === data.groupId ? { ...g, ...data.updates } : g
+        )
+      })
+    })
+  },
+
+  // Socket actions
+  joinGroupRoom: (groupId) => {
+    socketService.joinGroup(groupId)
+  },
+
+  leaveGroupRoom: (groupId) => {
+    socketService.leaveGroup(groupId)
+  },
+
+  updateFocusScoreRealtime: () => {
+    const user = get().user
+    const focusScore = get().focusScore
+    
+    socketService.updateFocusScore({
+      userId: user._id,
+      username: user.username,
+      focusScore: focusScore
+    })
+  },
+
+  // Update focus score and broadcast the change
+  updateFocusScore: (newScore) => {
+    set({ focusScore: newScore })
+    get().updateFocusScoreRealtime()
+  },
 }))

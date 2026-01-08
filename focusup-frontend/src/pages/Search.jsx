@@ -2,11 +2,13 @@ import { useState, useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { DoodleBackground } from '../components/DoodleBackground'
 import { FocusScoreBadge, FocusScoreBadgeCompact } from '../components/FocusScoreBadge'
+import { useFocusStore } from '../store/useFocusStore'
 import { profileAPI } from '../services/api'
 import { toast } from 'react-hot-toast'
-import { Search as SearchIcon } from 'lucide-react'
+import { Search as SearchIcon, Wifi } from 'lucide-react'
 
 export const Search = () => {
+  const { onlineUsers } = useFocusStore()
   const [searchQuery, setSearchQuery] = useState('')
   const [searchResults, setSearchResults] = useState([])
   const [loading, setLoading] = useState(false)
@@ -17,6 +19,17 @@ export const Search = () => {
   const [showSuggestions, setShowSuggestions] = useState(false)
   const searchInputRef = useRef(null)
   const suggestionsTimeoutRef = useRef(null)
+
+  // Helper function to check if a user is online
+  const isUserOnline = (userId) => {
+    return onlineUsers.some(user => user.userId === userId)
+  }
+
+  // Get updated focus score for online users
+  const getLatestFocusScore = (userId, defaultScore) => {
+    const onlineUser = onlineUsers.find(user => user.userId === userId)
+    return onlineUser ? onlineUser.focusScore : defaultScore
+  }
 
   // Handle search input with debouncing for suggestions
   const handleSearchInputChange = (e) => {
@@ -139,24 +152,42 @@ export const Search = () => {
               {/* Suggestions Dropdown */}
               {showSuggestions && suggestions.length > 0 && (
                 <div className="absolute top-full left-0 right-0 mt-2 bg-white border border-ink/10 rounded-2xl shadow-lg z-10 max-h-80 overflow-y-auto">
-                  {suggestions.map((user) => (
-                    <button
-                      key={user._id}
-                      onClick={() => handleSuggestionClick(user)}
-                      className="w-full text-left px-4 py-3 hover:bg-sand/30 border-b border-ink/5 last:border-b-0 transition-all flex items-center justify-between"
-                    >
-                      <div>
-                        <p className="font-semibold text-ink">{user.name}</p>
-                        <p className="text-sm text-ink/60">@{user.username}</p>
-                      </div>
-                      {user.focusScore !== undefined && (
-                        <div className="text-right">
-                          <p className="font-bold text-teal text-sm">{user.focusScore}</p>
-                          <p className="text-xs text-ink/60">Score</p>
+                  {suggestions.map((user) => {
+                    const isOnline = isUserOnline(user._id)
+                    const currentFocusScore = getLatestFocusScore(user._id, user.focusScore)
+                    
+                    return (
+                      <button
+                        key={user._id}
+                        onClick={() => handleSuggestionClick(user)}
+                        className="w-full text-left px-4 py-3 hover:bg-sand/30 border-b border-ink/5 last:border-b-0 transition-all flex items-center justify-between"
+                      >
+                        <div className="flex items-center space-x-3">
+                          <div className="relative">
+                            <div className="w-8 h-8 rounded-full bg-gradient-to-br from-teal to-blue flex items-center justify-center text-white font-bold text-xs">
+                              {user.name?.charAt(0).toUpperCase() || 'U'}
+                            </div>
+                            {isOnline && (
+                              <div className="absolute -bottom-1 -right-1 w-2 h-2 bg-green-400 border border-white rounded-full"></div>
+                            )}
+                          </div>
+                          <div>
+                            <p className="font-semibold text-ink flex items-center gap-1">
+                              {user.name}
+                              {isOnline && <Wifi className="w-3 h-3 text-green-500" />}
+                            </p>
+                            <p className="text-sm text-ink/60">@{user.username}</p>
+                          </div>
                         </div>
-                      )}
-                    </button>
-                  ))}
+                        {currentFocusScore !== undefined && (
+                          <div className="text-right">
+                            <p className="font-bold text-teal text-sm">{currentFocusScore}</p>
+                            <p className="text-xs text-ink/60">Score</p>
+                          </div>
+                        )}
+                      </button>
+                    )
+                  })}
                 </div>
               )}
             </div>
@@ -174,7 +205,16 @@ export const Search = () => {
         {selectedUser && (
           <div className="rounded-3xl bg-white/80 p-8 shadow-soft">
             <div className="flex items-start justify-between mb-6">
-              <h3 className="text-2xl font-bold text-ink">Profile Details</h3>
+              <div className="flex items-center gap-3">
+                <h3 className="text-2xl font-bold text-ink">Profile Details</h3>
+                {isUserOnline(selectedUser._id) && (
+                  <div className="flex items-center gap-2 px-3 py-1 bg-green-100 rounded-full">
+                    <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+                    <Wifi className="w-4 h-4 text-green-600" />
+                    <span className="text-sm font-medium text-green-700">Online</span>
+                  </div>
+                )}
+              </div>
               <button
                 onClick={() => setSelectedUser(null)}
                 className="text-ink/50 hover:text-ink text-2xl"
@@ -187,7 +227,7 @@ export const Search = () => {
               {/* Focus Score Badge */}
               <div className="flex justify-center md:col-span-1">
                 <FocusScoreBadge
-                  score={selectedUser.focusScore || 0}
+                  score={getLatestFocusScore(selectedUser._id, selectedUser.focusScore || 0)}
                   size="medium"
                   showLabel={true}
                   showScore={true}

@@ -1,10 +1,25 @@
 import User from '../models/User.js'
 import { generateToken, generateRefreshToken, verifyRefreshToken } from '../utils/jwt.js'
 import { validateEmail, validatePassword, validateName } from '../utils/validators.js'
+import mongoose from 'mongoose'
+
+// Helper to check database connection
+const isDatabaseConnected = () => {
+  return mongoose.connection.readyState === 1
+}
 
 // ============ REGISTER ============
 export const register = async (req, res, next) => {
   try {
+    // Check if database is connected
+    if (!isDatabaseConnected()) {
+      return res.status(503).json({
+        success: false,
+        message: 'Database service temporarily unavailable. Please check if MongoDB is running.',
+        code: 'DATABASE_UNAVAILABLE'
+      })
+    }
+
     const { name, username, email, password, college, department, role, studentId } = req.body
 
     // Validation
@@ -144,6 +159,15 @@ export const register = async (req, res, next) => {
 // ============ LOGIN ============
 export const login = async (req, res, next) => {
   try {
+    // Check if database is connected
+    if (!isDatabaseConnected()) {
+      return res.status(503).json({
+        success: false,
+        message: 'Database service temporarily unavailable. Please check if MongoDB is running.',
+        code: 'DATABASE_UNAVAILABLE'
+      })
+    }
+
     const { email, password } = req.body
 
     // Validation

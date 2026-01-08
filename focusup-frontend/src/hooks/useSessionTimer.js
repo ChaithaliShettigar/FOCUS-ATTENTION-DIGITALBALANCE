@@ -9,7 +9,12 @@ export const useSessionTimer = (sessionId, targetMinutes, onComplete) => {
       if (!current) return
       if (current.elapsedSeconds >= targetMinutes * 60) {
         clearInterval(tick)
-        if (onComplete) onComplete()
+        if (onComplete) {
+          onComplete()
+          // Trigger real-time focus score update when session completes
+          const { updateFocusScoreRealtime } = useFocusStore.getState()
+          updateFocusScoreRealtime()
+        }
       }
     }, 1000)
     return () => clearInterval(tick)
