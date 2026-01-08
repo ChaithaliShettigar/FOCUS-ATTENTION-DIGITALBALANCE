@@ -16,6 +16,7 @@ export const createSession = async (req, res) => {
       contentId,
       subject: subject || 'General',
       targetMinutes,
+      startTime: new Date(),
       status: 'active',
     })
 
@@ -95,7 +96,7 @@ export const updateSession = async (req, res) => {
 // End session
 export const endSession = async (req, res) => {
   try {
-    const { status, actualMinutes, tabSwitches, notes } = req.body
+    const { status, elapsedSeconds, activeSeconds, idleSeconds, tabSwitches } = req.body
 
     let session = await Session.findById(req.params.id)
 
@@ -107,25 +108,39 @@ export const endSession = async (req, res) => {
       return res.status(403).json({ message: 'Not authorized' })
     }
 
+    // Update session data
     session.status = status || 'completed'
-    session.actualMinutes = actualMinutes || session.actualMinutes
+    session.elapsedSeconds = elapsedSeconds || session.elapsedSeconds
+    session.activeSeconds = activeSeconds || session.activeSeconds
+    session.idleSeconds = idleSeconds || session.idleSeconds
     session.tabSwitches = tabSwitches || session.tabSwitches
-    session.notes = notes || session.notes
     session.endTime = new Date()
+
+    // Calculate focus score (matching frontend algorithm)
+    if (session.status === 'completed') {
+      const completion = session.elapsedSeconds / (session.targetMinutes * 60 || 1)
+      const activityRatio = session.activeSeconds / (session.elapsedSeconds || 1)
+      const distractionPenalty = session.tabSwitches * 2 + session.idleSeconds / 30
+      session.focusScore = Math.max(0, Math.round(100 * completion * activityRatio - distractionPenalty))
+    }
 
     await session.save()
 
     // Update user stats
+    const user = await User.findById(req.user.id)
+    user.focusScore = Math.max(0, (user.focusScore || 0) + session.focusScore)
+    
+    // Update streak if completed
     if (session.status === 'completed') {
-      const user = await User.findById(req.user.id)
-      user.totalFocusMinutes += session.actualMinutes
-      user.focusScore += session.focusScore
-      await user.save()
+      user.streak = (user.streak || 0) + 1
     }
+    
+    await user.save()
 
     res.status(200).json({
       success: true,
       session,
+      focusScore: session.focusScore,
     })
   } catch (error) {
     res.status(500).json({ message: error.message })

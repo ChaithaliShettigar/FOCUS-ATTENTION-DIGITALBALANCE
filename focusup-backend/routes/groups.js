@@ -8,7 +8,7 @@ import {
   updateGroup,
   deleteGroup,
 } from '../controllers/groupController.js'
-import { protect } from '../middleware/auth.js'
+import protect from '../middleware/auth.js'
 
 const router = express.Router()
 

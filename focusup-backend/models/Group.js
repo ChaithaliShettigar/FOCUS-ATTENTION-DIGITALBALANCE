@@ -11,6 +11,12 @@ const groupSchema = new mongoose.Schema(
       type: String,
       default: '',
     },
+    code: {
+      type: String,
+      required: true,
+      unique: true,
+      uppercase: true,
+    },
     createdBy: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'User',

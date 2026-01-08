@@ -10,9 +10,13 @@ export const createGroup = async (req, res) => {
       return res.status(400).json({ message: 'Group name is required' })
     }
 
+    // Generate unique 4-character code
+    const code = Math.random().toString(36).slice(2, 6).toUpperCase()
+
     const group = await Group.create({
       name,
       description,
+      code,
       createdBy: req.user.id,
       isPublic: isPublic || false,
       members: [{ userId: req.user.id, role: 'admin' }],
@@ -175,3 +179,105 @@ export const deleteGroup = async (req, res) => {
     res.status(500).json({ message: error.message })
   }
 }
+
+// Join group by code
+export const joinGroupByCode = async (req, res) => {
+  try {
+    const { code, userName } = req.body
+
+    if (!code) {
+      return res.status(400).json({ message: 'Group code is required' })
+    }
+
+    const group = await Group.findOne({ code: code.toUpperCase() })
+
+    if (!group) {
+      return res.status(404).json({ message: 'Group not found with that code' })
+    }
+
+    // Check if already a member
+    const isMember = group.members.some((m) => m.userId.toString() === req.user.id)
+    if (isMember) {
+      return res.status(400).json({ message: 'You are already a member of this group' })
+    }
+
+    // Add member
+    group.members.push({
+      userId: req.user.id,
+      role: 'member',
+    })
+
+    await group.save()
+
+    res.status(200).json({
+      success: true,
+      group,
+      message: `Successfully joined ${group.name}`,
+    })
+  } catch (error) {
+    res.status(500).json({ message: error.message })
+  }
+}
+
+// Share resource to group
+export const shareResource = async (req, res) => {
+  try {
+    const { contentId, title, type, url } = req.body
+    const groupId = req.params.id
+
+    const group = await Group.findById(groupId)
+
+    if (!group) {
+      return res.status(404).json({ message: 'Group not found' })
+    }
+
+    // Check if user is member
+    const isMember = group.members.some((m) => m.userId.toString() === req.user.id)
+    if (!isMember) {
+      return res.status(403).json({ message: 'You must be a member to share resources' })
+    }
+
+    // Add resource
+    group.resources.push({
+      id: contentId,
+      title,
+      link: url,
+      type,
+      addedBy: req.user.id,
+    })
+
+    await group.save()
+
+    res.status(200).json({
+      success: true,
+      group,
+      message: 'Resource shared successfully',
+    })
+  } catch (error) {
+    res.status(500).json({ message: error.message })
+  }
+}
+
+// Get group leaderboard
+export const getLeaderboard = async (req, res) => {
+  try {
+    const groupId = req.params.id
+
+    const group = await Group.findById(groupId).populate('leaderboard.userId', 'name focusScore')
+
+    if (!group) {
+      return res.status(404).json({ message: 'Group not found' })
+    }
+
+    // Sort leaderboard by focus score
+    const sortedLeaderboard = group.leaderboard.sort((a, b) => b.focusScore - a.focusScore)
+
+    res.status(200).json({
+      success: true,
+      leaderboard: sortedLeaderboard,
+    })
+  } catch (error) {
+    res.status(500).json({ message: error.message })
+  }
+}
+

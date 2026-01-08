@@ -1,12 +1,16 @@
 # Dependencies
-node_modules
+node_modules/
 package-lock.json
+yarn.lock
+pnpm-lock.yaml
 
 # Build outputs
-dist
-dist-ssr
-build
+dist/
+dist-ssr/
+build/
 *.tgz
+.next/
+out/
 
 # Environment variables
 .env
@@ -15,35 +19,61 @@ build
 .env.production
 .env.test
 *.local
+.env*.local
 
-# Logs
-logs
+# Logs and cache
+logs/
+logs/*.log
 *.log
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 pnpm-debug.log*
 lerna-debug.log*
+.cache/
 
 # OS files
 .DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
 Thumbs.db
+desktop.ini
 
-# Editor directories and files
+# IDE and Editor directories
 .vscode/*
 !.vscode/extensions.json
-.idea
+!.vscode/settings.json
+!.vscode/launch.json
+.idea/
 *.suo
 *.ntvs*
 *.njsproj
 *.sln
 *.sw?
 *~
+*.sublime-workspace
+*.sublime-project
+.vscode-oss
+*.iml
 
 # Testing
-coverage
-.nyc_output
+coverage/
+.nyc_output/
+.jest/
+*.lcov
+.mocharc.json
 
-# Temporary files
-tmp
-temp
+# Temporary and generated files
+tmp/
+temp/
+.turbo/
+
+# Vite
+.vite/
+
+# Local development
+.pnp
+.pnp.js

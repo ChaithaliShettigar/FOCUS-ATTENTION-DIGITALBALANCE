@@ -18,8 +18,12 @@ const contentSchema = new mongoose.Schema(
     },
     type: {
       type: String,
-      enum: ['link', 'upload', 'note'],
+      enum: ['link', 'upload', 'note', 'pdf', 'youtube', 'code'],
       required: true,
+    },
+    notes: {
+      type: String,
+      default: '',
     },
     url: {
       type: String,

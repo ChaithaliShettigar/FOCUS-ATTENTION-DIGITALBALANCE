@@ -1,6 +1,7 @@
 import jwt from 'jsonwebtoken'
+import { verifyRefreshToken } from '../utils/jwt.js'
 
-export const protect = async (req, res, next) => {
+const protect = async (req, res, next) => {
   try {
     let token
 
@@ -17,9 +18,20 @@ export const protect = async (req, res, next) => {
       req.user = decoded
       next()
     } catch (error) {
+      if (error.name === 'TokenExpiredError') {
+        return res.status(401).json({ message: 'Token expired', code: 'TOKEN_EXPIRED' })
+      }
       return res.status(401).json({ message: 'Token is not valid' })
     }
   } catch (error) {
     res.status(500).json({ message: error.message })
   }
 }
+
+<<<<<<< HEAD
+export const verifyRefresh = (token) => {
+  return verifyRefreshToken(token)
+}
+=======
+export default protect
+>>>>>>> fabba55 (Backend: focus session tracking with WebSocket, route fixes, debug endpoint, docs and testing guide)

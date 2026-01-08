@@ -24,6 +24,18 @@ const sessionSchema = new mongoose.Schema(
       type: Number,
       default: 0,
     },
+    elapsedSeconds: {
+      type: Number,
+      default: 0,
+    },
+    activeSeconds: {
+      type: Number,
+      default: 0,
+    },
+    idleSeconds: {
+      type: Number,
+      default: 0,
+    },
     tabSwitches: {
       type: Number,
       default: 0,

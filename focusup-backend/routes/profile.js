@@ -4,8 +4,9 @@ import {
   updateProfile,
   updatePassword,
   togglePublicFocus,
+  deleteProfile,
 } from '../controllers/profileController.js'
-import { protect } from '../middleware/auth.js'
+import protect from '../middleware/auth.js'
 
 const router = express.Router()
 
@@ -15,5 +16,6 @@ router.get('/', getProfile)
 router.put('/', updateProfile)
 router.put('/password', updatePassword)
 router.post('/toggle-public-focus', togglePublicFocus)
+router.delete('/', deleteProfile)
 
 export default router

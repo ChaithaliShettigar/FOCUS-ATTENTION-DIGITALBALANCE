@@ -18,7 +18,7 @@ const userSchema = new mongoose.Schema(
     password: {
       type: String,
       required: [true, 'Please provide a password'],
-      minlength: 6,
+      minlength: [8, 'Password must be at least 8 characters'],
       select: false,
     },
     college: {
@@ -28,6 +28,14 @@ const userSchema = new mongoose.Schema(
     department: {
       type: String,
       default: '',
+    },
+    studentId: {
+      type: String,
+      default: '',
+<<<<<<< HEAD
+      sparse: true,
+=======
+>>>>>>> fabba55 (Backend: focus session tracking with WebSocket, route fixes, debug endpoint, docs and testing guide)
     },
     role: {
       type: String,
@@ -53,6 +61,10 @@ const userSchema = new mongoose.Schema(
     avatar: {
       type: String,
       default: '',
+    },
+    preferences: {
+      type: Object,
+      default: {},
     },
     language: {
       type: String,
