@@ -389,9 +389,9 @@ Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
 
 **Environment Variables:**
 ```
-JWT_SECRET=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+JWT_SECRET=your_super_secure_jwt_secret_64_chars_here
 JWT_EXPIRE=7d
-JWT_REFRESH_SECRET=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+JWT_REFRESH_SECRET=your_super_secure_refresh_secret_64_chars_here
 JWT_REFRESH_EXPIRE=30d
 ```
 
