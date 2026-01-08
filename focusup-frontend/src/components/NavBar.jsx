@@ -1,8 +1,10 @@
 import { useState } from 'react'
-import { Link, NavLink } from 'react-router-dom'
+import { Link, NavLink, useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { useFocusStore } from '../store/useFocusStore'
-import { Menu, X } from 'lucide-react'
+import { authAPI } from '../services/api'
+import { Menu, X, LogOut } from 'lucide-react'
+import { toast } from 'react-hot-toast'
 
 const links = [
   { to: '/dashboard', labelKey: 'dashboard' },
@@ -11,18 +13,34 @@ const links = [
   { to: '/analytics', labelKey: 'analytics' },
   { to: '/profile', labelKey: 'profile' },
   { to: '/settings', labelKey: 'settings' },
-  { to: '/auth', labelKey: 'login' },
 ]
 
 export const NavBar = () => {
   const { t, i18n } = useTranslation()
   const language = useFocusStore((s) => s.language)
   const setLanguage = useFocusStore((s) => s.setLanguage)
+  const isAuthenticated = useFocusStore((s) => s.isAuthenticated)
+  const setAuthenticated = useFocusStore((s) => s.setAuthenticated)
+  const setUser = useFocusStore((s) => s.setUser)
   const [open, setOpen] = useState(false)
+  const navigate = useNavigate()
 
   const changeLng = (lng) => {
     setLanguage(lng)
     i18n.changeLanguage(lng)
+  }
+
+  const handleLogout = async () => {
+    try {
+      await authAPI.logout()
+      setUser({})
+      setAuthenticated(false)
+      toast.success('Logged out successfully')
+      navigate('/auth')
+    } catch (error) {
+      console.error('Logout error:', error)
+      toast.error('Logout failed')
+    }
   }
 
   return (
@@ -49,6 +67,27 @@ export const NavBar = () => {
               {t(item.labelKey)}
             </NavLink>
           ))}
+          {isAuthenticated ? (
+            <button
+              onClick={handleLogout}
+              className="rounded-full px-3 py-2 text-ink/80 hover:bg-clay/70 transition-all flex items-center gap-2"
+              title="Logout"
+            >
+              <LogOut className="h-4 w-4" />
+              Logout
+            </button>
+          ) : (
+            <NavLink
+              to="/auth"
+              className={({ isActive }) =>
+                `rounded-full px-3 py-2 transition-all ${
+                  isActive ? 'bg-ink text-sand shadow-soft' : 'text-ink/80 hover:bg-clay/70'
+                }`
+              }
+            >
+              {t('login')}
+            </NavLink>
+          )}
         </nav>
         <div className="flex items-center gap-2">
           <select
@@ -87,6 +126,30 @@ export const NavBar = () => {
                   {t(item.labelKey)}
                 </NavLink>
               ))}
+              {isAuthenticated ? (
+                <button
+                  onClick={() => {
+                    handleLogout()
+                    setOpen(false)
+                  }}
+                  className="block rounded-xl px-3 py-2 text-sm font-medium text-ink hover:bg-clay/70 text-left flex items-center gap-2"
+                >
+                  <LogOut className="h-4 w-4" />
+                  Logout
+                </button>
+              ) : (
+                <NavLink
+                  to="/auth"
+                  onClick={() => setOpen(false)}
+                  className={({ isActive }) =>
+                    `block rounded-xl px-3 py-2 text-sm font-medium ${
+                      isActive ? 'bg-ink text-sand shadow-soft' : 'text-ink hover:bg-clay/70'
+                    }`
+                  }
+                >
+                  {t('login')}
+                </NavLink>
+              )}
             </div>
           </div>
         </div>

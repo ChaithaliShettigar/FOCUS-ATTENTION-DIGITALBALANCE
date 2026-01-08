@@ -1,19 +1,28 @@
 import { create } from 'zustand'
+import { getUserFromStorage, isAuthenticated as checkAuth } from '../services/api'
 
 // Lightweight id helper
 const makeId = () => crypto.randomUUID ? crypto.randomUUID() : Math.random().toString(36).slice(2, 9)
 
 const initialUser = {
   name: '',
+  email: '',
   college: '',
   department: '',
   role: 'student',
   publicFocus: false,
+  studentId: '',
+}
+
+// Load user from localStorage on initialization
+const loadStoredUser = () => {
+  const storedUser = getUserFromStorage()
+  return storedUser || initialUser
 }
 
 export const useFocusStore = create((set, get) => ({
-  user: initialUser,
-  isAuthenticated: false,
+  user: loadStoredUser(),
+  isAuthenticated: checkAuth(),
   language: 'en',
   focusScore: 0,
   streak: 0,
@@ -25,7 +34,14 @@ export const useFocusStore = create((set, get) => ({
   currentSessionId: null,
 
   setLanguage: (lng) => set({ language: lng }),
-  setUser: (payload) => set({ user: { ...get().user, ...payload } }),
+  setUser: (payload) => {
+    const updatedUser = { ...get().user, ...payload }
+    // Update localStorage when user changes
+    if (Object.keys(payload).length > 0) {
+      localStorage.setItem('user', JSON.stringify(updatedUser))
+    }
+    set({ user: updatedUser })
+  },
   setAuthenticated: (flag) => set({ isAuthenticated: !!flag }),
   togglePublicFocus: () => set({ user: { ...get().user, publicFocus: !get().user.publicFocus } }),
 

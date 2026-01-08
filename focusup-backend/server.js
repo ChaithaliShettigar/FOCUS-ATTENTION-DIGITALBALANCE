@@ -50,6 +50,21 @@ app.use((req, res) => {
 
 const PORT = process.env.PORT || 5000
 
-app.listen(PORT, () => {
+const server = app.listen(PORT, () => {
   console.log(`🚀 Server running on port ${PORT}`)
+})
+
+// Handle server errors
+server.on('error', (error) => {
+  console.error('❌ Server error:', error.message)
+  if (error.code === 'EADDRINUSE') {
+    console.error(`Port ${PORT} is already in use. Please free the port or use a different one.`)
+  }
+  process.exit(1)
+})
+
+// Handle unhandled rejections
+process.on('unhandledRejection', (err) => {
+  console.error('❌ Unhandled Rejection:', err.message)
+  server.close(() => process.exit(1))
 })

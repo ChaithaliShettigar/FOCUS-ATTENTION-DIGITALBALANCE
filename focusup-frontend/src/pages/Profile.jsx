@@ -1,36 +1,143 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { DoodleBackground } from '../components/DoodleBackground'
 import { useFocusStore } from '../store/useFocusStore'
 import { toast } from 'react-hot-toast'
 import { Eye, EyeOff } from 'lucide-react'
+import { profileAPI, authAPI } from '../services/api'
 
 export const Profile = () => {
   const user = useFocusStore((s) => s.user)
   const setUser = useFocusStore((s) => s.setUser)
-  const togglePublicFocus = useFocusStore((s) => s.togglePublicFocus)
+  const setAuthenticated = useFocusStore((s) => s.setAuthenticated)
   const [showPassword, setShowPassword] = useState(false)
   const [passwordForm, setPasswordForm] = useState({ current: '', new: '', confirm: '' })
   const [editingSection, setEditingSection] = useState(null)
+  const [loading, setLoading] = useState(false)
+  const [profileData, setProfileData] = useState({ ...user })
+  const navigate = useNavigate()
 
-  const update = (key, value) => setUser({ [key]: value })
+  useEffect(() => {
+    setProfileData({ ...user })
+  }, [user])
 
-  const handlePasswordChange = (e) => {
+  const update = (key, value) => setProfileData({ ...profileData, [key]: value })
+
+  const handleProfileSave = async () => {
+    setLoading(true)
+    try {
+      const updates = {
+        name: profileData.name,
+        college: profileData.college,
+        department: profileData.department,
+        role: profileData.role,
+        studentId: profileData.studentId,
+      }
+      
+      const response = await profileAPI.updateProfile(updates)
+      
+      if (response.success) {
+        setUser(response.user)
+        toast.success('Profile updated successfully!')
+      }
+    } catch (error) {
+      console.error('Profile update error:', error)
+      toast.error(error.message || 'Failed to update profile')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const handlePasswordChange = async (e) => {
     e.preventDefault()
+    
     if (!passwordForm.current || !passwordForm.new || !passwordForm.confirm) {
       toast.error('All password fields are required.')
       return
     }
+    
     if (passwordForm.new !== passwordForm.confirm) {
       toast.error('New passwords do not match.')
       return
     }
-    if (passwordForm.new.length < 6) {
-      toast.error('Password must be at least 6 characters.')
+    
+    if (passwordForm.new.length < 8) {
+      toast.error('Password must be at least 8 characters.')
       return
     }
-    toast.success('Password changed successfully!')
-    setPasswordForm({ current: '', new: '', confirm: '' })
-    setEditingSection(null)
+
+    setLoading(true)
+    try {
+      const response = await profileAPI.updatePassword(
+        passwordForm.current,
+        passwordForm.new,
+        passwordForm.confirm
+      )
+      
+      if (response.success) {
+        toast.success('Password changed successfully!')
+        setPasswordForm({ current: '', new: '', confirm: '' })
+        setEditingSection(null)
+      }
+    } catch (error) {
+      console.error('Password change error:', error)
+      toast.error(error.message || 'Failed to change password')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const handleTogglePublicFocus = async () => {
+    setLoading(true)
+    try {
+      const response = await profileAPI.togglePublicFocus()
+      
+      if (response.success) {
+        setUser({ ...user, publicFocus: !user.publicFocus })
+        toast.success(
+          response.user.publicFocus 
+            ? 'Focus stats are now public' 
+            : 'Focus stats are now private'
+        )
+      }
+    } catch (error) {
+      console.error('Toggle public focus error:', error)
+      toast.error(error.message || 'Failed to update privacy settings')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const handleDeleteAccount = async () => {
+    const password = prompt('Enter your password to confirm account deletion:')
+    
+    if (!password) {
+      toast.error('Password is required to delete account')
+      return
+    }
+
+    const confirmDelete = window.confirm(
+      'Are you sure you want to delete your account? This action cannot be undone.'
+    )
+    
+    if (!confirmDelete) return
+
+    setLoading(true)
+    try {
+      const response = await authAPI.deleteAccount(password, true)
+      
+      if (response.success) {
+        setUser({})
+        setAuthenticated(false)
+        toast.success('Account deleted successfully')
+        navigate('/auth')
+      }
+    } catch (error) {
+      console.error('Delete account error:', error)
+      toast.error(error.message || 'Failed to delete account')
+    } finally {
+      setLoading(false)
+    }
   }
 
   return (
@@ -44,12 +151,12 @@ export const Profile = () => {
         {/* Personal Information */}
         <Section title="Personal Information" icon="👤">
           <div className="grid gap-4 md:grid-cols-2">
-            <FormField label="Full Name" value={user.name} onChange={(e) => update('name', e.target.value)} />
+            <FormField label="Full Name" value={profileData.name} onChange={(e) => update('name', e.target.value)} />
             <FormField label="Email" value={user.email || 'not.set@focusup.com'} disabled placeholder="Email" />
             <div>
               <label className="block text-sm font-semibold text-ink mb-2">Role</label>
               <select
-                value={user.role}
+                value={profileData.role}
                 onChange={(e) => update('role', e.target.value)}
                 className="w-full rounded-2xl border border-ink/10 bg-white px-4 py-2.5 text-ink focus:border-teal focus:outline-none"
               >
@@ -57,9 +164,18 @@ export const Profile = () => {
                 <option value="faculty">👨‍🏫 Faculty/Teacher</option>
               </select>
             </div>
-            <FormField label="College/University" value={user.college} onChange={(e) => update('college', e.target.value)} />
-            <FormField label="Department" value={user.department} onChange={(e) => update('department', e.target.value)} />
-            <FormField label="Student ID" value={user.studentId || 'Not set'} onChange={(e) => update('studentId', e.target.value)} placeholder="e.g., STU123456" />
+            <FormField label="College/University" value={profileData.college} onChange={(e) => update('college', e.target.value)} />
+            <FormField label="Department" value={profileData.department} onChange={(e) => update('department', e.target.value)} />
+            <FormField label="Student ID" value={profileData.studentId || ''} onChange={(e) => update('studentId', e.target.value)} placeholder="e.g., STU123456" />
+          </div>
+          <div className="mt-4">
+            <button
+              onClick={handleProfileSave}
+              disabled={loading}
+              className="rounded-full bg-gradient-to-r from-teal to-teal-dark px-6 py-2.5 font-semibold text-white hover:shadow-lg transition-all disabled:opacity-50"
+            >
+              {loading ? 'Saving...' : 'Save Profile Changes'}
+            </button>
           </div>
         </Section>
 
@@ -109,9 +225,10 @@ export const Profile = () => {
               <div className="flex gap-3">
                 <button
                   type="submit"
-                  className="rounded-full bg-gradient-to-r from-teal to-teal-dark px-6 py-2.5 font-semibold text-white hover:shadow-lg transition-all"
+                  disabled={loading}
+                  className="rounded-full bg-gradient-to-r from-teal to-teal-dark px-6 py-2.5 font-semibold text-white hover:shadow-lg transition-all disabled:opacity-50"
                 >
-                  Update Password
+                  {loading ? 'Updating...' : 'Update Password'}
                 </button>
                 <button
                   type="button"
@@ -164,8 +281,9 @@ export const Profile = () => {
                 <p className="text-xs text-ink/70">Control whether others see your score on leaderboards</p>
               </div>
               <button
-                onClick={togglePublicFocus}
-                className={`rounded-full px-4 py-2 text-sm font-semibold transition-all ${
+                onClick={handleTogglePublicFocus}
+                disabled={loading}
+                className={`rounded-full px-4 py-2 text-sm font-semibold transition-all disabled:opacity-50 ${
                   user.publicFocus ? 'bg-gradient-to-r from-teal to-teal-dark text-white' : 'bg-white border border-ink/20 text-ink'
                 }`}
               >
@@ -200,12 +318,9 @@ export const Profile = () => {
               🖥️ Logout from all devices
             </button>
             <button
-              onClick={() => {
-                if (window.confirm('Are you sure? This action cannot be undone.')) {
-                  toast.error('Account deletion requested. Confirm via email.')
-                }
-              }}
-              className="w-full rounded-2xl border border-red-300 bg-red-50 px-4 py-3 font-semibold text-red-700 hover:bg-red-100 transition-all text-left"
+              onClick={handleDeleteAccount}
+              disabled={loading}
+              className="w-full rounded-2xl border border-red-300 bg-red-50 px-4 py-3 font-semibold text-red-700 hover:bg-red-100 transition-all text-left disabled:opacity-50"
             >
               🗑️ Delete account permanently
             </button>
